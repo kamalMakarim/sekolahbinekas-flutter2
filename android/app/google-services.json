@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1024187886702",
+    "project_id": "binekas-ebcc6",
+    "storage_bucket": "binekas-ebcc6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1024187886702:android:55c81e7191589a94fe0a7f",
+        "android_client_info": {
+          "package_name": "com.kamalmakarim.sekolahbinekas"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAG6QormNAA28lqYfQGiQYPGb4dxTOeMDo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
