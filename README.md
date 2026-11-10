@@ -16,9 +16,6 @@ rm -rf .dart_tool
 rm -f pubspec.lock
 rm -rf ios/Pods ios/Podfile.lock ios/.symlinks ios/Flutter/Flutter.framework ios/Flutter/Flutter.podspec
 flutter pub get
-cd ios
-pod repo update
-pod install
 cd ..
 flutter build ios --release
 open ios/Runner.xcworkspace
