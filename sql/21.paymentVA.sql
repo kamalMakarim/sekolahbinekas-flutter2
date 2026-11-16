@@ -9,7 +9,7 @@ DROP TYPE IF EXISTS public.invoice_status CASCADE;
 DROP TYPE IF EXISTS public.payment_methods CASCADE;
 DROP TYPE IF EXISTS public.request_status CASCADE;
 
-CREATE TYPE public.invoice_status AS ENUM ('issued', 'on_hold', 'verifying', 'paid', 'draft');
+CREATE TYPE public.invoice_status AS ENUM ('issued', 'on_hold', 'paid', 'draft');
 CREATE TYPE public.payment_methods AS ENUM ('bca', 'bni', 'qris');
 CREATE TYPE public.request_status AS ENUM ('pending', 'approved', 'rejected');
 
@@ -218,13 +218,27 @@ SET search_path = ''
 AS $$
 BEGIN
     UPDATE public.students
-    SET has_paid = COALESCE((
-        SELECT SUM(i.price_per_item * i.quantity) < 9000000
-        FROM public.invoices i
-        WHERE i.student_id = p_student_id
-          AND i.status IN ('issued', 'on_hold')
-    ), true)
+    SET has_paid = CASE
+        WHEN COALESCE((
+            SELECT SUM(i.price_per_item * i.quantity)
+            FROM public.invoices i
+            WHERE i.student_id = p_student_id
+              AND i.status IN ('issued', 'on_hold')
+        ), 0) >= 9000000 THEN false
+        ELSE true
+    END
     WHERE id = p_student_id;
+        IF EXISTS (
+                SELECT 1
+                FROM public.students
+                WHERE id = p_student_id
+                    AND has_paid = true
+        ) THEN
+                UPDATE public.invoices
+                SET status = 'issued'
+                WHERE student_id = p_student_id
+                    AND status = 'on_hold';
+        END IF;
 END;
 $$;
 
@@ -236,7 +250,7 @@ SET search_path = ''
 AS $$
 BEGIN
     IF TG_OP = 'INSERT'
-       AND NEW.status IN ('issued', 'paid')
+       AND NEW.status IN ('issued', 'paid', 'on_hold')
     THEN
         INSERT INTO public.notifications (auth_id, title, body)
         SELECT s.parent_auth_id, 'Invoice update',
@@ -245,7 +259,7 @@ BEGIN
         WHERE s.id = NEW.student_id;
     ELSIF TG_OP = 'UPDATE'
           AND NEW.status IS DISTINCT FROM OLD.status
-          AND NEW.status IN ('issued', 'paid')
+          AND NEW.status IN ('issued', 'paid', 'on_hold')
     THEN
         INSERT INTO public.notifications (auth_id, title, body)
         SELECT s.parent_auth_id, 'Invoice update',
