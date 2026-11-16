@@ -18,6 +18,7 @@ import '../screens/employee/employee_profile_screen.dart';
 import '../screens/employee/change_shift_request_screen.dart';
 import '../screens/employee/change_shift_approval_screen.dart';
 import '../screens/employee/change_shift_status_screen.dart';
+import '../screens/payment/invoice_payment_screen.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -39,6 +40,7 @@ class AppRoutes {
   static const changeShiftRequest = '/change-shift-request';
   static const changeShiftApproval = '/change-shift-approval';
   static const changeShiftStatus = '/change-shift-status';
+  static const invoicePayment = '/invoice-payment';
 
   static final routes = <String, WidgetBuilder>{
     login: (_) => LoginScreen(),
@@ -60,5 +62,6 @@ class AppRoutes {
     changeShiftRequest: (_) => const ChangeShiftRequestScreen(),
     changeShiftApproval: (_) => const ChangeShiftApprovalScreen(),
     changeShiftStatus: (_) => const ChangeShiftStatusScreen(),
+    invoicePayment: (_) => const InvoicePaymentScreen(),
   };
 }

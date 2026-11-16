@@ -200,6 +200,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       );
                     },
                   ),
+                  if (currentUser?.role == 'parent')
+                    HomeMenuItem(
+                      icon: Icons.receipt_long_outlined,
+                      label: "Pembayaran",
+                      onTap: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.invoicePayment,
+                      ),
+                    ),
                   HomeMenuItem(
                     icon: Icons.camera_alt,
                     label: "Foto Kegiatan",
