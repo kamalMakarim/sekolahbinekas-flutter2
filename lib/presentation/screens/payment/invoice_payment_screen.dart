@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:sekolahbinekas/data/invoice_database.dart';
-import 'package:sekolahbinekas/data/payment_option_database.dart';
 import 'package:sekolahbinekas/data/student_database.dart';
 import 'package:sekolahbinekas/models/invoice.dart';
-import 'package:sekolahbinekas/models/payment_option.dart';
 import 'package:sekolahbinekas/models/student.dart';
+
+import 'payment_options_screen.dart';
 
 class InvoicePaymentScreen extends StatefulWidget {
   const InvoicePaymentScreen({super.key});
@@ -19,17 +19,17 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen>
   late final TabController _tabController;
   final _studentDatabase = StudentDatabase();
   final _invoiceDatabase = InvoiceDatabase();
-  final _paymentOptionDatabase = PaymentOptionDatabase();
 
   List<Student> _students = [];
   Student? _selectedStudent;
   List<Invoice> _invoices = [];
-  List<PaymentOption> _paymentOptions = [];
-  DateTime? _selectedPaidMonth;
+  DateTime _selectedPaidMonth = DateTime(
+    DateTime.now().year,
+    DateTime.now().month - 1,
+  );
   bool _isLoadingStudents = true;
   bool _isLoadingInvoices = false;
   String? _errorMessage;
-  String? _paymentOptionsError;
 
   @override
   void initState() {
@@ -64,7 +64,6 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen>
       });
       if (_selectedStudent != null) {
         await _loadInvoices();
-        await _loadPaymentOptions();
       }
     } catch (error) {
       if (!mounted) return;
@@ -91,8 +90,8 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen>
       };
       final invoices = await _invoiceDatabase.getInvoicesByStudentId(
         student.id,
-        _tabController.index == 2 && _selectedPaidMonth != null
-            ? DateFormat('yyyy-MM-dd').format(_selectedPaidMonth!)
+        _tabController.index == 2
+            ? DateFormat('yyyy-MM-dd').format(_selectedPaidMonth)
             : null,
         status,
       );
@@ -110,50 +109,95 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen>
     }
   }
 
-  Future<void> _loadPaymentOptions() async {
-    try {
-      final options = await _paymentOptionDatabase.getPaymentOptionsByStudentId(
-        _selectedStudent!.id,
-      );
-      if (mounted) {
-        setState(() {
-          _paymentOptions = options.map(PaymentOption.fromMap).toList();
-          _paymentOptionsError = null;
-        });
-      }
-    } catch (error) {
-      if (mounted) {
-        setState(() {
-          _paymentOptionsError =
-              'Metode pembayaran tidak dapat dimuat. Silakan coba lagi.';
-        });
-      }
-    }
-  }
-
   void _selectStudent(Student? student) {
     if (student == null) return;
     setState(() {
       _selectedStudent = student;
-      _selectedPaidMonth = null;
+      _selectedPaidMonth = DateTime(
+        DateTime.now().year,
+        DateTime.now().month - 1,
+      );
     });
     _loadInvoices();
-    _loadPaymentOptions();
   }
 
   Future<void> _choosePaidMonth() async {
     final now = DateTime.now();
-    final selected = await showDatePicker(
+    final firstMonth = DateTime(now.year - 5, 1);
+    final lastMonth = DateTime(now.year + 1, 12);
+    final selected = await showDialog<DateTime>(
       context: context,
-      initialDate: _selectedPaidMonth ?? now,
-      firstDate: DateTime(now.year - 5),
-      lastDate: DateTime(now.year + 1),
-      helpText: 'Pilih bulan invoice',
+      builder: (context) {
+        var selectedYear = _selectedPaidMonth.year;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Pilih bulan invoice'),
+              content: SizedBox(
+                width: 320,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DropdownButton<int>(
+                      value: selectedYear,
+                      items: [
+                        for (
+                          var year = firstMonth.year;
+                          year <= lastMonth.year;
+                          year++
+                        )
+                          DropdownMenuItem(
+                            value: year,
+                            child: Text(year.toString()),
+                          ),
+                      ],
+                      onChanged: (year) {
+                        if (year != null) {
+                          setDialogState(() => selectedYear = year);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 8),
+                    GridView.count(
+                      crossAxisCount: 3,
+                      shrinkWrap: true,
+                      mainAxisSpacing: 8,
+                      crossAxisSpacing: 8,
+                      children: [
+                        for (var month = 1; month <= 12; month++)
+                          OutlinedButton(
+                            onPressed: () {
+                              final selectedMonth = DateTime(
+                                selectedYear,
+                                month,
+                                1,
+                              );
+                              if (selectedMonth.isBefore(firstMonth) ||
+                                  selectedMonth.isAfter(lastMonth)) {
+                                return;
+                              }
+                              Navigator.of(context).pop(selectedMonth);
+                            },
+                            child: Text(
+                              DateFormat(
+                                'MMM',
+                                'id_ID',
+                              ).format(DateTime(selectedYear, month, 1)),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
     );
     if (selected == null || !mounted) return;
-    setState(
-      () => _selectedPaidMonth = DateTime(selected.year, selected.month),
-    );
+    setState(() => _selectedPaidMonth = selected);
     _loadInvoices();
   }
 
@@ -173,59 +217,10 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen>
   ).format(amount);
 
   Future<void> _payAllIssued() async {
-    if (_invoices.isEmpty) return;
-    if (_paymentOptions.isEmpty) await _loadPaymentOptions();
-    if (!mounted) return;
-    await showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Bayar semua invoice terbit',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                '${_invoices.length} invoice • ${_formatCurrency(_total)}',
-                style: TextStyle(color: Colors.grey.shade700),
-              ),
-              const SizedBox(height: 20),
-              if (_paymentOptionsError != null)
-                Text(_paymentOptionsError!)
-              else if (_paymentOptions.isEmpty)
-                const Text('Metode pembayaran belum tersedia.')
-              else
-                ..._paymentOptions.map(
-                  (option) => ListTile(
-                    contentPadding: EdgeInsets.zero,
-                    leading: const CircleAvatar(
-                      backgroundColor: Color(0xffe8f1ff),
-                      child: Icon(Icons.account_balance, color: Colors.blue),
-                    ),
-                    title: Text(option.paymentMethod.toUpperCase()),
-                    subtitle: Text(
-                      option.VANumber.isEmpty
-                          ? 'Ikuti instruksi pembayaran'
-                          : option.VANumber,
-                    ),
-                    onTap: () => Navigator.pop(context),
-                  ),
-                ),
-              const SizedBox(height: 8),
-              Text(
-                'Pembayaran akan diproses untuk semua invoice berstatus terbit.',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-        ),
-      ),
+    final student = _selectedStudent;
+    if (_invoices.isEmpty || student == null) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => PaymentOptionsScreen(student: student)),
     );
   }
 

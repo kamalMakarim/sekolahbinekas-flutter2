@@ -1,3 +1,7 @@
+DROP TABLE IF EXISTS public.invoices CASCADE;
+DROP TABLE IF EXISTS public.proof CASCADE;
+DROP TABLE IF EXISTS public.invoice_proof CASCADE;
+
 DROP TABLE IF EXISTS public.request_on_hold_detail CASCADE;
 DROP TABLE IF EXISTS public.request_on_hold CASCADE;
 DROP TABLE IF EXISTS public.payment_option CASCADE;

@@ -15,11 +15,11 @@ class PaymentOption {
 
   factory PaymentOption.fromMap(Map<String, dynamic> map) {
     return PaymentOption(
-      id: map['id'] as String,
-      paymentMethod: map['payment_method'] as String,
-      VANumber: map['va_number'] as String,
-      key: map['key'] as String,
-      studentId: map['student_id'] as String, 
+      id: map['id']?.toString() ?? '',
+      paymentMethod: map['payment_method']?.toString() ?? '',
+      VANumber: map['va_number']?.toString() ?? '',
+      key: map['key']?.toString() ?? '',
+      studentId: map['student_id']?.toString() ?? '',
     );
   }
 
