@@ -3,6 +3,8 @@ ALTER TABLE public.employee_attendance ADD COLUMN shift_id uuid REFERENCES publi
 CREATE OR REPLACE FUNCTION public.set_employee_attendance_shift_id()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 BEGIN
   IF NEW.shift_id IS NULL THEN

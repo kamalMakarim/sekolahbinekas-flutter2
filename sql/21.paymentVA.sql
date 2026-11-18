@@ -1,5 +1,6 @@
 DROP TABLE IF EXISTS public.invoices CASCADE;
 DROP TABLE IF EXISTS public.proof CASCADE;
+DROP TABLE IF EXISTS public.proofs CASCADE;
 DROP TABLE IF EXISTS public.invoice_proof CASCADE;
 
 DROP TABLE IF EXISTS public.request_on_hold_detail CASCADE;
@@ -80,76 +81,117 @@ ALTER TABLE public.request_on_hold_detail ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoice_template ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.invoice_template_detail ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY invoices_accountant_all ON public.invoices
-    FOR ALL
-    USING (EXISTS (
-        SELECT 1 FROM public.users_private
-        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
-    ))
-    WITH CHECK (EXISTS (
-        SELECT 1 FROM public.users_private
-        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
-    ));
-
-CREATE POLICY invoices_parent_select ON public.invoices
+CREATE POLICY invoices_select ON public.invoices
     FOR SELECT
-    USING (EXISTS (
-        SELECT 1 FROM public.students
-        WHERE students.id = invoices.student_id
-          AND students.parent_auth_id = (SELECT auth.uid())
-    ));
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.users_private
+            WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.students
+            WHERE students.id = invoices.student_id
+              AND students.parent_auth_id = (SELECT auth.uid())
+        )
+    );
 
-CREATE POLICY payment_option_accountant_all ON public.payment_option
-    FOR ALL
-    USING (EXISTS (
-        SELECT 1 FROM public.users_private
-        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
-    ))
-    WITH CHECK (EXISTS (
-        SELECT 1 FROM public.users_private
-        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
-    ));
-
-CREATE POLICY payment_option_parent_select ON public.payment_option
-    FOR SELECT
-    USING (EXISTS (
-        SELECT 1 FROM public.students
-        WHERE students.id = payment_option.student_id
-          AND students.parent_auth_id = (SELECT auth.uid())
-    ));
-
-CREATE POLICY request_on_hold_accountant_all ON public.request_on_hold
-    FOR ALL
-    USING (EXISTS (
-        SELECT 1 FROM public.users_private
-        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
-    ))
-    WITH CHECK (EXISTS (
-        SELECT 1 FROM public.users_private
-        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
-    ));
-
-CREATE POLICY request_on_hold_parent_select ON public.request_on_hold
-    FOR SELECT
-    USING (EXISTS (
-        SELECT 1 FROM public.students
-        WHERE students.id = request_on_hold.student_id
-          AND students.parent_auth_id = (SELECT auth.uid())
-    ));
-
-CREATE POLICY request_on_hold_parent_insert ON public.request_on_hold
+CREATE POLICY invoices_insert ON public.invoices
     FOR INSERT
-    WITH CHECK (
-        request_status = 'pending'
-        AND EXISTS (
+    WITH CHECK (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY invoices_update ON public.invoices
+    FOR UPDATE
+    USING (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ))
+    WITH CHECK (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY invoices_delete ON public.invoices
+    FOR DELETE
+    USING (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY payment_option_select ON public.payment_option
+    FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.users_private
+            WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+        )
+        OR EXISTS (
+            SELECT 1 FROM public.students
+            WHERE students.id = payment_option.student_id
+              AND students.parent_auth_id = (SELECT auth.uid())
+        )
+    );
+
+CREATE POLICY payment_option_insert ON public.payment_option
+    FOR INSERT
+    WITH CHECK (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY payment_option_update ON public.payment_option
+    FOR UPDATE
+    USING (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ))
+    WITH CHECK (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY payment_option_delete ON public.payment_option
+    FOR DELETE
+    USING (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY request_on_hold_select ON public.request_on_hold
+    FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.users_private
+            WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+        )
+        OR EXISTS (
             SELECT 1 FROM public.students
             WHERE students.id = request_on_hold.student_id
               AND students.parent_auth_id = (SELECT auth.uid())
         )
     );
 
-CREATE POLICY request_on_hold_detail_accountant_all ON public.request_on_hold_detail
-    FOR ALL
+CREATE POLICY request_on_hold_insert ON public.request_on_hold
+    FOR INSERT
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.users_private
+            WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+        )
+        OR (
+            request_status = 'pending'
+            AND EXISTS (
+                SELECT 1 FROM public.students
+                WHERE students.id = request_on_hold.student_id
+                  AND students.parent_auth_id = (SELECT auth.uid())
+            )
+        )
+    );
+
+CREATE POLICY request_on_hold_update ON public.request_on_hold
+    FOR UPDATE
     USING (EXISTS (
         SELECT 1 FROM public.users_private
         WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
@@ -159,27 +201,64 @@ CREATE POLICY request_on_hold_detail_accountant_all ON public.request_on_hold_de
         WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
     ));
 
-CREATE POLICY request_on_hold_detail_parent_select ON public.request_on_hold_detail
-    FOR SELECT
+CREATE POLICY request_on_hold_delete ON public.request_on_hold
+    FOR DELETE
     USING (EXISTS (
-        SELECT 1
-        FROM public.request_on_hold r
-        JOIN public.students s ON s.id = r.student_id
-        WHERE r.id = request_on_hold_detail.request_on_hold_id
-          AND s.parent_auth_id = (SELECT auth.uid())
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
     ));
 
-CREATE POLICY request_on_hold_detail_parent_insert ON public.request_on_hold_detail
+CREATE POLICY request_on_hold_detail_select ON public.request_on_hold_detail
+    FOR SELECT
+    USING (
+        EXISTS (
+            SELECT 1 FROM public.users_private
+            WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM public.request_on_hold r
+            JOIN public.students s ON s.id = r.student_id
+            WHERE r.id = request_on_hold_detail.request_on_hold_id
+              AND s.parent_auth_id = (SELECT auth.uid())
+        )
+    );
+
+CREATE POLICY request_on_hold_detail_insert ON public.request_on_hold_detail
     FOR INSERT
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM public.users_private
+            WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM public.request_on_hold r
+            JOIN public.invoices i ON i.student_id = r.student_id
+            JOIN public.students s ON s.id = r.student_id
+            WHERE r.id = request_on_hold_detail.request_on_hold_id
+              AND r.request_status = 'pending'
+              AND i.id = request_on_hold_detail.invoice_id
+              AND s.parent_auth_id = (SELECT auth.uid())
+        )
+    );
+
+CREATE POLICY request_on_hold_detail_update ON public.request_on_hold_detail
+    FOR UPDATE
+    USING (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ))
     WITH CHECK (EXISTS (
-        SELECT 1
-        FROM public.request_on_hold r
-        JOIN public.invoices i ON i.student_id = r.student_id
-        JOIN public.students s ON s.id = r.student_id
-        WHERE r.id = request_on_hold_detail.request_on_hold_id
-          AND r.request_status = 'pending'
-          AND i.id = request_on_hold_detail.invoice_id
-          AND s.parent_auth_id = (SELECT auth.uid())
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
+    ));
+
+CREATE POLICY request_on_hold_detail_delete ON public.request_on_hold_detail
+    FOR DELETE
+    USING (EXISTS (
+        SELECT 1 FROM public.users_private
+        WHERE auth_id = (SELECT auth.uid()) AND role = 'accountant'
     ));
 
 CREATE POLICY invoice_template_accountant_all ON public.invoice_template
@@ -207,6 +286,8 @@ CREATE POLICY invoice_template_detail_accountant_all ON public.invoice_template_
 CREATE OR REPLACE FUNCTION public.set_payment_updated_at()
 RETURNS trigger
 LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
 AS $$
 BEGIN
     NEW.updated_at = now();
@@ -230,19 +311,7 @@ BEGIN
               AND i.status IN ('issued', 'on_hold')
         ), 0) >= 9000000 THEN false
         ELSE true
-    END
-    WHERE id = p_student_id;
-        IF EXISTS (
-                SELECT 1
-                FROM public.students
-                WHERE id = p_student_id
-                    AND has_paid = true
-        ) THEN
-                UPDATE public.invoices
-                SET status = 'issued'
-                WHERE student_id = p_student_id
-                    AND status = 'on_hold';
-        END IF;
+    END;
 END;
 $$;
 
@@ -270,6 +339,12 @@ BEGIN
                'An invoice for ' || s.name || ' is now ' || NEW.status::text || '.'
         FROM public.students s
         WHERE s.id = NEW.student_id;
+        IF NEW.status = 'paid' THEN
+            UPDATE public.invoices i
+            SET status = 'issued'
+            FROM public.students s
+            WHERE i.student_id = s.id AND s.id = NEW.student_id AND i.status = 'on_hold';
+        END IF;
     END IF;
 
     PERFORM public.refresh_invoice_payment_status(NEW.student_id);
