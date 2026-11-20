@@ -4,11 +4,30 @@ import 'package:sekolahbinekas/models/student.dart';
 import 'package:sekolahbinekas/data/foto_kegiatan_database.dart';
 import 'package:sekolahbinekas/models/foto_kegiatan.dart';
 import 'package:sekolahbinekas/models/tingkat_classes.dart';
+
 import 'dart:io';
+
 import 'package:sekolahbinekas/data/image_database.dart';
 
 class FotoKegiatanLogic {
-  Future<({List<Student>? students, Student? currentStudent})> loadData() async {
+  Future<List<String>> loadAccessibleFotoKegiatanIds() async {
+    return FotoKegiatanDatabase().getAccessibleFotoKegiatanIds();
+  }
+
+  Future<List<FotoKegiatan>> loadFotoKegiatanPage({
+    required int offset,
+    required int limit,
+    List<String>? accessibleFotoKegiatanIds,
+  }) {
+    return FotoKegiatanDatabase().getFotoKegiatanPage(
+      offset: offset,
+      limit: limit,
+      accessibleFotoKegiatanIds: accessibleFotoKegiatanIds,
+    );
+  }
+
+  Future<({List<Student>? students, Student? currentStudent})>
+  loadData() async {
     final students = await StudentDatabase().getAllStudents();
     if (students.isEmpty) {
       return (students: null, currentStudent: null);
@@ -35,6 +54,7 @@ class FotoKegiatanLogic {
     required List<TingkatClasses> tingkatClasses,
     required File image,
     required String linkFoto,
+    required bool ppiOnly,
   }) async {
     // Upload images to Zipline first
     List<File> images = [image];
@@ -49,6 +69,7 @@ class FotoKegiatanLogic {
       classNames,
       imageUrls[0],
       linkFoto,
+      ppiOnly,
     );
 
     return true;

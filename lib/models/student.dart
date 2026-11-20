@@ -4,6 +4,7 @@ class Student {
   final String name;
   final int batch;
   final String class_name;
+  final bool ppi;
 
   Student({
     required this.id,
@@ -11,6 +12,7 @@ class Student {
     required this.name,
     required this.batch,
     required this.class_name,
+    required this.ppi,
   });
 
   //map -> Student
@@ -21,6 +23,7 @@ class Student {
       name: map['name'] as String,
       batch: map['batch'] as int,
       class_name: map['class_name'] as String,
+      ppi: map['ppi'] as bool,
     );
   }
 
@@ -32,6 +35,7 @@ class Student {
       'name': name,
       'batch': batch,
       'class_name': class_name,
+      'ppi': ppi,
     };
   }
 }

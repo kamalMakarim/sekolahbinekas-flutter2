@@ -15,7 +15,8 @@ class StudentDatabase {
         currentUserClass != null && currentUserClass.isNotEmpty
         ? 'parent_auth_id.eq.$currentUserId,class_name.eq.$currentUserClass'
         : 'parent_auth_id.eq.$currentUserId'
-      );
+      )
+      .order('name', ascending: true);
 
     // response is expected to be a List<dynamic>
     final students = (response as List)
@@ -28,7 +29,8 @@ class StudentDatabase {
     final response = await supabase
         .from('students')
         .select('id, parent_auth_id, name, batch, class_name')
-        .eq('class_name', className);
+        .eq('class_name', className)
+        .order('name', ascending: true);
 
     // response is expected to be a List<dynamic>
     final students = (response as List)
@@ -42,7 +44,8 @@ class StudentDatabase {
     final response = await supabase
         .from('students')
         .select('id, parent_auth_id, name, batch, class_name')
-        .eq('parent_auth_id', currentUserId);
+        .eq('parent_auth_id', currentUserId)
+        .order('name', ascending: true);
 
     // response is expected to be a List<dynamic>
     final students = (response as List)

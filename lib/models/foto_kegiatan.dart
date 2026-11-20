@@ -1,9 +1,10 @@
-class FotoKegiatan{
+class FotoKegiatan {
   final String id;
   final String link_foto;
   final String nama_kegiatan;
   final String thumbnail_foto;
   final List<String> classes_name;
+  final bool only_ppi;
   DateTime? createdAt;
 
   FotoKegiatan({
@@ -12,6 +13,7 @@ class FotoKegiatan{
     required this.nama_kegiatan,
     required this.thumbnail_foto,
     required this.classes_name,
+    required this.only_ppi,
     this.createdAt,
   });
 
@@ -22,6 +24,7 @@ class FotoKegiatan{
       nama_kegiatan: map['nama_kegiatan'] as String,
       thumbnail_foto: map['thumbnail_foto'] as String,
       classes_name: List<String>.from(map['classes_name'] as List<dynamic>),
+      only_ppi: map['only_ppi'] as bool,
       createdAt: map['created_at'] != null
           ? DateTime.parse(map['created_at'])
           : null,
@@ -35,6 +38,7 @@ class FotoKegiatan{
       'nama_kegiatan': nama_kegiatan,
       'thumbnail_foto': thumbnail_foto,
       'classes_name': classes_name,
+      'only_ppi': only_ppi,
       'created_at': createdAt?.toIso8601String(),
     };
   }

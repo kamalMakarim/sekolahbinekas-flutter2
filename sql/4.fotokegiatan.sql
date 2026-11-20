@@ -61,6 +61,18 @@ USING (
     JOIN public.students s ON s.id = fsa.student_id
     WHERE fsa.foto_kegiatan_id = foto_kegiatan.id
       AND (SELECT auth.uid()) = s.parent_auth_id
+  ) OR EXISTS(
+    SELECT 1
+    FROM public.users_private
+    WHERE (SELECT auth.uid()) = auth_id
+      AND class_name = ANY (foto_kegiatan.classes_name)
+  ) OR EXISTS (
+    SELECT 1
+    FROM public.users_private up
+    JOIN public.tingkat_role tr ON tr.role = up.role
+    JOIN public.tingkat_classes tc ON tc.tingkat = tr.tingkat
+    WHERE (SELECT auth.uid()) = up.auth_id
+      AND tc.class_name = ANY (foto_kegiatan.classes_name)
   )
 );
 
@@ -72,7 +84,29 @@ USING (
     SELECT 1
     FROM public.students s
     WHERE s.id = foto_student_access.student_id
-      AND (SELECT auth.uid()) = s.parent_auth_id
+      AND (
+        (SELECT auth.uid()) = s.parent_auth_id
+        OR EXISTS (
+          SELECT 1
+          FROM public.users_private up
+          WHERE (SELECT auth.uid()) = up.auth_id
+            AND up.role = 'multimedia'
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM public.users_private up
+          WHERE (SELECT auth.uid()) = up.auth_id
+            AND up.class_name = s.class_name
+        )
+        OR EXISTS (
+          SELECT 1
+          FROM public.users_private up
+          JOIN public.tingkat_role tr ON tr.role = up.role
+          JOIN public.tingkat_classes tc ON tc.tingkat = tr.tingkat
+          WHERE (SELECT auth.uid()) = up.auth_id
+            AND tc.class_name = s.class_name
+        )
+      )
   )
 );
 
@@ -112,3 +146,36 @@ CREATE TRIGGER trg_insert_foto_student_access_by_class
 AFTER INSERT ON public.foto_kegiatan
 FOR EACH ROW EXECUTE FUNCTION public.insert_foto_student_access_by_class();
 
+ALTER TABLE public.students ADD COLUMN ppi BOOLEAN DEFAULT FALSE NOT NULL;
+ALTER TABLE public.foto_kegiatan ADD COLUMN only_ppi BOOLEAN DEFAULT FALSE NOT NULL;
+
+CREATE OR REPLACE FUNCTION public.insert_foto_student_access_by_class()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = ''
+AS $$
+BEGIN
+  -- 1️⃣ Insert foto_student_access
+  INSERT INTO public.foto_student_access (student_id, foto_kegiatan_id)
+  SELECT s.id, NEW.id
+  FROM public.students s
+  WHERE s.class_name = ANY (NEW.classes_name)
+    AND (s.ppi OR NOT NEW.only_ppi);
+
+  -- 2️⃣ Notify parents with student names + activity
+  INSERT INTO public.notifications (auth_id, title, body)
+  SELECT
+    s.parent_auth_id,
+    'Foto Kegiatan Baru',
+    'Foto untuk ' ||
+      string_agg(DISTINCT s.name, ', ') ||
+      ' (' || NEW.nama_kegiatan || ') sekarang tersedia.'
+  FROM public.students s
+  WHERE s.class_name = ANY (NEW.classes_name)
+    AND (s.ppi OR NOT NEW.only_ppi)
+  GROUP BY s.parent_auth_id;
+
+  RETURN NEW;
+END;
+$$;
