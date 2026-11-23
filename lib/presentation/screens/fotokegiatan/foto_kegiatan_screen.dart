@@ -19,6 +19,7 @@ class _FotoKegiatanScreenState extends State<FotoKegiatanScreen> {
   List<String> _accessibleFotoKegiatanIds = [];
   List<FotoKegiatan> _fotoKegiatanList = [];
   bool _isMultimedia = false;
+  bool _isBidangStudy = false;
   bool _showAllFotoKegiatan = false;
   bool _isLoading = true;
   bool _isInitialized = false;
@@ -45,12 +46,16 @@ class _FotoKegiatanScreenState extends State<FotoKegiatanScreen> {
     });
     try {
       final role = await UserDatabase().getUserRole();
-      final accessibleIds = await _fotoKegiatanLogic
-          .loadAccessibleFotoKegiatanIds();
+      final isBidangStudy =
+          role == 'bidang_study_tk' || role == 'bidang_study_sd';
+      final accessibleIds = isBidangStudy
+          ? <String>[]
+          : await _fotoKegiatanLogic.loadAccessibleFotoKegiatanIds();
       if (!mounted) return;
 
       setState(() {
         _isMultimedia = role == 'multimedia';
+        _isBidangStudy = isBidangStudy;
         _accessibleFotoKegiatanIds = accessibleIds;
         _isInitialized = true;
         _isLoading = false;
@@ -88,7 +93,8 @@ class _FotoKegiatanScreenState extends State<FotoKegiatanScreen> {
       final photos = await _fotoKegiatanLogic.loadFotoKegiatanPage(
         offset: offset,
         limit: _pageSize,
-        accessibleFotoKegiatanIds: _showAllFotoKegiatan
+        // Bidang study access is scoped by the foto_kegiatan RLS policies.
+        accessibleFotoKegiatanIds: _showAllFotoKegiatan || _isBidangStudy
             ? null
             : _accessibleFotoKegiatanIds,
       );
@@ -173,7 +179,7 @@ class _FotoKegiatanScreenState extends State<FotoKegiatanScreen> {
               padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               itemCount: _itemCount,
               itemBuilder: (context, index) {
-                if (index == 0) return _buildIntroCard(context);
+                if (index == 0) return const SizedBox.shrink();
                 if (_fotoKegiatanList.isEmpty) {
                   return _buildEmptyState(context);
                 }
@@ -202,52 +208,6 @@ class _FotoKegiatanScreenState extends State<FotoKegiatanScreen> {
     return 1 +
         (_fotoKegiatanList.isEmpty ? 1 : _fotoKegiatanList.length) +
         (hasFooter && _fotoKegiatanList.isNotEmpty ? 1 : 0);
-  }
-
-  Widget _buildIntroCard(BuildContext context) {
-    final textColor = Theme.of(context).colorScheme.onPrimary;
-
-    return Card(
-      color: Colors.blue,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.photo_library_outlined,
-              color: Colors.white,
-              size: 32,
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Kenangan kegiatan siswa',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: textColor,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    _showAllFotoKegiatan
-                        ? 'Menampilkan semua foto kegiatan.'
-                        : 'Foto kegiatan yang dapat Anda akses.',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: textColor.withValues(alpha: 0.9)),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   Widget _buildPhotoCard(FotoKegiatan foto) {

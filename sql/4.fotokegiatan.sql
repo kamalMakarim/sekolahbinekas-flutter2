@@ -163,18 +163,15 @@ BEGIN
   WHERE s.class_name = ANY (NEW.classes_name)
     AND (s.ppi OR NOT NEW.only_ppi);
 
-  -- 2️⃣ Notify parents with student names + activity
+  -- notify all users that have student_access
   INSERT INTO public.notifications (auth_id, title, body)
   SELECT
-    s.parent_auth_id,
+    u.auth_id,
     'Foto Kegiatan Baru',
-    'Foto untuk ' ||
-      string_agg(DISTINCT s.name, ', ') ||
-      ' (' || NEW.nama_kegiatan || ') sekarang tersedia.'
-  FROM public.students s
-  WHERE s.class_name = ANY (NEW.classes_name)
-    AND (s.ppi OR NOT NEW.only_ppi)
-  GROUP BY s.parent_auth_id;
+    'Foto untuk ' || NEW.nama_kegiatan || ' sekarang tersedia.'
+  FROM public.foto_student_access fsa
+  JOIN public.users_private u ON u.id = fsa.student_id
+  WHERE fsa.foto_kegiatan_id = NEW.id;
 
   RETURN NEW;
 END;
