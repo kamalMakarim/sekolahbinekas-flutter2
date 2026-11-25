@@ -10,7 +10,7 @@ class StudentDatabase {
     String? currentUserClass = await UserDatabase().getCurrentUserClassName();
     final response = await supabase
       .from('students')
-      .select('id, parent_auth_id, name, batch, class_name')
+      .select('id, parent_auth_id, name, batch, class_name, ppi')
       .or(
         currentUserClass != null && currentUserClass.isNotEmpty
         ? 'parent_auth_id.eq.$currentUserId,class_name.eq.$currentUserClass'
@@ -28,7 +28,7 @@ class StudentDatabase {
   Future<List<Student>> getStudentsByClass(String className) async {
     final response = await supabase
         .from('students')
-        .select('id, parent_auth_id, name, batch, class_name')
+        .select('id, parent_auth_id, name, batch, class_name, ppi')
         .eq('class_name', className)
         .order('name', ascending: true);
 
@@ -43,7 +43,7 @@ class StudentDatabase {
     String currentUserId = await UserDatabase().getCurrentUserId();
     final response = await supabase
         .from('students')
-        .select('id, parent_auth_id, name, batch, class_name')
+        .select('id, parent_auth_id, name, batch, class_name, ppi')
         .eq('parent_auth_id', currentUserId)
         .order('name', ascending: true);
 
