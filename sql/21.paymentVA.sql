@@ -311,7 +311,8 @@ BEGIN
               AND i.status IN ('issued', 'on_hold')
         ), 0) >= 9000000 THEN false
         ELSE true
-    END;
+    END
+    WHERE id = p_student_id;
 END;
 $$;
 

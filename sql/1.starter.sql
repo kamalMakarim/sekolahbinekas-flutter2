@@ -669,6 +669,11 @@ CREATE POLICY "Can view accessible students" ON public.students
       WHERE sa.student_id = public.students.id
         AND sa.auth_id = (SELECT auth.uid())
     )
+    OR EXISTS (
+      SELECT 1 FROM public.users_private up
+      WHERE up.auth_id = (SELECT auth.uid())
+        AND up.role IN ('admin', 'accountant')
+    )
   );
 
 -- USERS_PRIVATE
