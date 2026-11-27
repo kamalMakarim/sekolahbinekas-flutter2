@@ -2,6 +2,13 @@
 
 A new Flutter project.
 
+## Pengajuan penahanan invoice
+
+Jalankan `sql/23.on_hold_requests.sql` setelah `sql/21.paymentVA.sql` pada
+database Supabase sebelum menggunakan fitur ini. Orang tua dapat mengajukan
+penahanan seluruh invoice terbit dari halaman Pembayaran. Akuntan memproses
+pengajuan dan melihat riwayat melalui menu Pengajuan Penahanan.
+
 ## Command test di simulator
 
 ```bash

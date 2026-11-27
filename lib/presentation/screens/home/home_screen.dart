@@ -13,6 +13,7 @@ import 'package:sekolahbinekas/presentation/screens/fotokegiatan/add_foto_kegiat
 import 'package:sekolahbinekas/presentation/screens/log/log_bs_screen.dart';
 import 'package:sekolahbinekas/core/notifications_service.dart';
 import 'package:sekolahbinekas/presentation/screens/absen/kalender.dart';
+import 'package:sekolahbinekas/presentation/screens/payment/accountant_hold_request_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -207,6 +208,17 @@ class _HomeScreenState extends State<HomeScreen> {
                       onTap: () => Navigator.pushNamed(
                         context,
                         AppRoutes.invoicePayment,
+                      ),
+                    ),
+                  if (currentUser?.role == 'accountant')
+                    HomeMenuItem(
+                      icon: Icons.pending_actions_outlined,
+                      label: "Pengajuan Penahanan",
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AccountantHoldRequestScreen(),
+                        ),
                       ),
                     ),
                   HomeMenuItem(

@@ -6,6 +6,7 @@ import 'package:sekolahbinekas/models/invoice.dart';
 import 'package:sekolahbinekas/models/student.dart';
 
 import 'payment_options_screen.dart';
+import 'parent_hold_request_screen.dart';
 
 class InvoicePaymentScreen extends StatefulWidget {
   const InvoicePaymentScreen({super.key});
@@ -246,6 +247,17 @@ class _InvoicePaymentScreenState extends State<InvoicePaymentScreen>
                     students: _students,
                     selectedStudent: _selectedStudent,
                     onChanged: _selectStudent,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const ParentHoldRequestScreen()),
+                      );
+                      if (mounted) _loadInvoices();
+                    },
+                    icon: const Icon(Icons.pause_circle_outline),
+                    label: const Text('Ajukan penahanan invoice'),
                   ),
                   const SizedBox(height: 20),
                   Container(

@@ -17,7 +17,7 @@ class RequestOnHoldDetail {
       id: map['id'] as String,
       requestOnHoldId: map['request_on_hold_id'] as String,
       invoiceId: map['invoice_id'] as String,
-      quantity: map['quantity'] as int,
+      quantity: map['qty'] as int,
     );
   }
 
@@ -27,7 +27,7 @@ class RequestOnHoldDetail {
       'id': id,
       'request_on_hold_id': requestOnHoldId,
       'invoice_id': invoiceId,
-      'quantity': quantity,
+      'qty': quantity,
     };
   }
 }
